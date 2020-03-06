@@ -1,19 +1,4 @@
-// END POINTS
-// EVENTS
 
-// READ ALL EVENTS :  /api/v1/events GET
-// READ AN INDIVIDUAL EVENT: /api/v1/events/:id/ GET
-// CREATE AN EVENT: /api/v1/events POST
-// UPDATE EVENT; /api/v1/events UPDATE
-// DELETE INDIVIDUAL EVENT: /api/v1/events/:id DELETE
-// DELETE ALL EVENTS /api/v1/events DELETE
-
-//BOOKINGS
-// READ ALL BOOKINGS FOR AN EVENT:  /api/v1/events/:id/bookings : GET
-// READ INDIVIUDAL BOOKING FOR AN EVENT: /api/v1/events/:id/bookings/:id : GET
-// CREATE A NEW EVENT: /api/v1/events/:id/bookings/ : POST
-// DELETE AN BOOKING: /api/v1/events/:id/bookings/:id : DELETE
-// DELETE ALL BOOKINGS FOR A PARTICULAR EVENT: /api/v1/events/:id/bookings/ : DELETE
 
 
 const port = 3000;
@@ -24,30 +9,11 @@ const cors = require('cors')
 app.use(bodyParser.json())
 
 
-
-// const event = {
-//     "id": 0,
-//     "name": "",
-//     "description": "",
-//     "location": "",
-//     "capcity": 0,
-//     "startDate" : "",
-//     "endDate": "",
-//     "bookings": []
-// }
-
-// const booking = {
-//     "id": 0,
-//     "firstName": "",
-//     "lastName": "",
-//     "spots": 0,
-//     "email": "",
-//     "tel": ""
-// }
-
-
 events = [];
 
+app.use('*',(req, res) => {
+    res.status(405).send('Operation not supported.');
+});
 
 app.use('*',(req,res,next) => {
     console.log(req.method + " to " + req.originalUrl);
@@ -77,12 +43,17 @@ app.post('/api/v1/events/', (req,res) =>{
     "description":req.body.description,
     "location":req.body.location,
     "capacity":req.body.capacity,
-    "startDate":req.body.startDate,
-    "endDate":req.body.endDate,
+    "startDate":req.body.startDate, // sent in unix timestamp format
+    "endDate":req.body.endDate, // sent in unix timestamp format
     "bookings":[]}
+    console.log(newEvent)
 
 
     if (checkIfLegalEvent(newEvent)){
+        var updatedStartDate = new Date(newEvent.startDate*1000);
+        var updatedEndDate = new Date(newEvent.endDate * 1000);
+        newEvent.startDate = updatedStartDate;
+        newEvent.endDate = updatedEndDate;
         res.status(201).json({"message":newEvent})
         events.push(newEvent);
     }
@@ -102,7 +73,7 @@ app.get('/api/v1/events/:id',(req,res) =>{
         res.status(200).json({"message":fetchedEvent})
     }
     else{
-        res.status(404).json({message:"Event does not exists!"})
+        res.status(404).json({"message":"Event does not exists!"})
     }
 
 })
@@ -110,7 +81,7 @@ app.get('/api/v1/events/:id',(req,res) =>{
 // delete all events
 app.delete('/api/v1/events', (req,res) => {
     if (events.length == 0){
-        res.status(404).json({message:"No events found!"});
+        res.status(404).json({"message":"No events found!"});
     }
     else {
         returnedArray = deleteAllEvents(events);
@@ -123,7 +94,6 @@ app.delete('/api/v1/events/:eid', (req,res) => {
    
    var fetchedEvent = doesEventExisits(req.params.eid)
    if (fetchedEvent != false){
-       console.log(fetchedEvent)
        res.status(200).json({"message":fetchedEvent})
        deleteSingleEvent(req.params.eid)
 
@@ -136,15 +106,93 @@ app.delete('/api/v1/events/:eid', (req,res) => {
 
 })
 
+// app.put('/api/v1/events/:eid', (req,res) =>{
+//     var fetchedEvent = doesEventExisits(req.params.eid)
+//     if (fetchedEvent != false){
+//        req_event = {
+//            "name":req.body.name,
+//            "description":req.body.description,
+//            "location":req.body.location,
+//            "capacity":req.body.capacity,
+//            "startDate":req.body.startDate,
+//            "endDate":req.body.endDate
+
+//        }
+
+//        if (checkIfLegalEvent(req_event)){
+//             //update the event
+//             updatedEvent = []
+//             res.status(200).json({"message": updatedEvent})
+//        }
+
+//        else{
+//            res.status(400).json({"message":"Invalid input!"})
+//        }
+         
+
+//     }
+//     else{
+//         res.status(404).json({"message":"Event does not exist!"})
+//     }
+// })
+
+
+
+
+// HELPER FUNCTIONS BELOW
 
 // checks if event is legal - needs some more work
 function checkIfLegalEvent(newEvent){
-    if (newEvent.name != ""  && newEvent.capacity >0 && newEvent.endDate != "" && newEvent.startDate != ""){
-        return true;
+    if (areDatesLegal(newEvent.startDate,newEvent.endDate)){
+        console.log('dates OK')
+        return true
+
+
     }
+
     else{
+        console.log('bad dates')
+        return false
+    }
+
+}
+
+
+
+function areDatesLegal(startDate,endDate){
+    // most likely a more elegent way to do this
+    
+    
+    start = Number(startDate)
+    end = Number(endDate)
+    // The input must be of unix timestamp format so if we get a NaN it's not on the correct format
+
+    if (isNaN(start) || isNaN(end)){
+        console.log('NaN')
         return false;
     }
+
+    var start = new Date(startDate*1000);
+    var end = new Date(endDate*1000);
+    var curr = new Date(Date.now());
+    
+
+
+// Start date can't be higher then end date
+    if (start >= end){
+        console.log("start>=end");
+        return false;
+    }
+// Current 
+    if (start < curr){
+        console.log("curr > start");
+        return false;
+    }
+
+    else{
+        return true;
+    }
+
 
 }
 
