@@ -181,18 +181,26 @@ app.get('/api/v1/events/:eid/bookings/',(req, res)=>{
 //create booking
 app.post('/api/v1/events/:eid/bookings/',(req, res)=>{
    
-    if (req.body === undefined || req.body.firstName === undefined || req.body.lastName == undefined || (req.body.tel === undefined && req.body.email === undefined ) || req.body.spots === undefined) {
+    if (req.body === undefined || req.body.firstName === undefined || req.body.lastName == undefined || (req.body.tel === undefined && req.body.email === undefined ) || req.body.spots === undefined && req.body.spots >0 && isNaN(req.body.spots) == false ) {
         res.status(400).json({'message': "you left one of the required fields empty. You're allowed to leave either email or phone empty but not both"});
     }
     else {
-        
+        let SeatsOccupiedAtEvent= CalculateAmountOfUsedSeats(req.params.eid)
         fetchedEvent = doesEventExisits(req.params.eid)
         if (fetchedEvent != false)
         {
             nextid = idgeneratorforbookings(req.params.eid, fetchedEvent)
             let newBooking = {id: nextid, firstName: req.body.firstName, lastName: req.body.lastName, tel: req.body.tel, email: req.body.email, spots: req.body.spots}
-            fetchedEvent.bookings.push(newBooking);
-            res.status(201).json(newBooking);
+            let TotalOccupiedSeats = SeatsOccupiedAtEvent + req.body.spots
+            if (TotalOccupiedSeats <= fetchedEvent.capacity)
+            {
+                fetchedEvent.bookings.push(newBooking);
+                res.status(201).json(newBooking);
+            }
+            else
+            {
+                res.status(400).json({"message":"Too many seats occupied"})
+            }
         }
         else 
         {
@@ -228,9 +236,6 @@ app.delete('/api/v1/events/:eid/bookings/:bid', (req,res) =>
         if (fetchedBookings != false){
             res.status(200).json({"message":fetchedBookings})
             deleteSingleBooking(req.params.bid, req.params.eid)}
-    
-
- 
         else
         {
             res.status(404).json({"message":"Bookings not found!"})
@@ -455,4 +460,19 @@ function deleteAllBookingsForEvent(eventID){
         }
     }
     return 
+}
+
+function CalculateAmountOfUsedSeats(eventID){
+    let theBookings = []
+    let count = 0
+    for(let i=0; i<events.length;i++){
+        if (events[i].id == eventID)
+        {
+            theBookings = events[i].bookings
+        }
+    for(let i=0; i<theBookings.length;i++){
+            count += theBookings[i].spots
+        }
+    }
+    return count
 }
