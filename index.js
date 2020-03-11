@@ -20,6 +20,11 @@ app.listen(port, () =>{
     console.log('Express app listening on port ' + port)
 });
 
+////////////////////////////////
+//        THIS IS FOR         //
+//      EVENT ENDPOINTS       //
+////////////////////////////////
+
 // Get all events!
 app.get('/api/v1/events', (req,res) =>{
     if (events.length > 0){
@@ -115,7 +120,7 @@ app.put('/api/v1/events/:eid', (req,res) => {
             "startDate": req.body.startDate,
             "endDate": req.body.endDate,
             "bookings": fetchedEvent.bookings
-        }
+        }  
 
         if(updatedEvent.bookings.length === 0){
             if (checkIfLegalEvent(updatedEvent) == true){
@@ -140,12 +145,125 @@ app.put('/api/v1/events/:eid', (req,res) => {
    
     }
     else{
-        res.status(404).json({"message": "event not found!"})
+        res.status(404)
     }
 
 
 })
 
+
+////////////////////////////////
+//       THIS IS FOR          //
+//     BOOKING ENDPOINTS      //
+////////////////////////////////
+
+//get all bookings for a single event
+app.get('/api/v1/events/:eid/bookings/',(req, res)=>{
+    
+    if (events.length > 0){
+        let bookings = getAllBookings(req.params.eid);
+        console.log(bookings)
+        console.log(bookings)
+
+        if (bookings.length !== 0){
+            res.status(200).json({bookings})
+        }
+        else
+        {
+            res.status(404).json({"message":"No bookings found!"});
+        }
+    }
+    else{
+        res.status(404).json({"message":"No events found!" });
+    }
+});
+
+//create booking
+app.post('/api/v1/events/:eid/bookings/',(req, res)=>{
+   
+    if (req.body === undefined || req.body.firstName === undefined || req.body.lastName == undefined || (req.body.tel === undefined && req.body.email === undefined ) || req.body.spots === undefined) {
+        res.status(400).json({'message': "you left one of the required fields empty. You're allowed to leave either email or phone empty but not both"});
+    }
+    else {
+        
+        fetchedEvent = doesEventExisits(req.params.eid)
+        if (fetchedEvent != false)
+        {
+            nextid = idgeneratorforbookings(req.params.eid, fetchedEvent)
+            let newBooking = {id: nextid, firstName: req.body.firstName, lastName: req.body.lastName, tel: req.body.tel, email: req.body.email, spots: req.body.spots}
+            fetchedEvent.bookings.push(newBooking);
+            res.status(201).json(newBooking);
+        }
+        else 
+        {
+            res.status(404).json({"message":"Event does not exists!"})
+        }
+    }
+});
+
+
+//get single booking for single event
+app.get('/api/v1/events/:eid/bookings/:bid',(req,res) =>{
+    fetchedEvent = doesEventExisits(req.params.eid)
+    if (fetchedEvent != false)
+    {
+        var fetchedBookings = IdBookingFinder(req.params.bid, req.params.eid)
+        if (fetchedBookings != false){
+            res.status(200).json({"message":fetchedBookings})
+        }
+        else{
+            res.status(404).json({"message":"Booking does not exists!"})
+        }
+    }
+
+})
+
+//delete a booking
+app.delete('/api/v1/events/:eid/bookings/:bid', (req,res) => 
+{
+    fetchedEvent = doesEventExisits(req.params.eid)
+    if (fetchedEvent != false)
+    {
+        var fetchedBookings = IdBookingFinder(req.params.bid, req.params.eid)
+        if (fetchedBookings != false){
+            res.status(200).json({"message":fetchedBookings})
+            deleteSingleBooking(req.params.bid, req.params.eid)}
+    
+
+ 
+        else
+        {
+            res.status(404).json({"message":"Bookings not found!"})
+        }
+    }
+    else
+    {
+        res.status(404).json({"message":"Event does not exists!"})
+    }
+ 
+})
+
+//delete all bookings for a particular event
+app.delete('/api/v1/events/:eid/bookings/', (req,res) => {
+    fetchedEvent = doesEventExisits(req.params.eid)
+    if (fetchedEvent != false)
+    {
+    var fetchedBookings = IdBookingFinder(req.params.bid, req.params.eid)
+    if (fetchedBookings.length == 0){
+        res.status(404).json({"message":"No bookings found!"});
+    }
+    else
+    {
+        deleteAllBookingsForEvent(req.params.eid)
+        res.status(200).json({"message": "bookings deleted successfully"});
+    }
+    }
+    else{
+        res.status(404).json({"message":"Event does not exists!"})
+    }
+})
+
+// IF failure to complete any of the above endpoints return failure
 app.use('*',(req, res) => {
     res.status(405).send('Operation not supported.');
 });
@@ -200,7 +318,7 @@ function areDatesLegal(startDate,endDate){
         console.log("start>=end");
         return false;
     }
-// Current 
+// Current date
     if (start < curr){
         console.log("curr > start");
         return false;
@@ -209,8 +327,6 @@ function areDatesLegal(startDate,endDate){
     else{
         return true;
     }
-
-
 }
 
 
@@ -229,6 +345,15 @@ function getAllEvents(){
         
     }
     return returned_array
+}
+
+function getAllBookings(idOfEvent){
+    returned_array = []
+    for (let i = 0; i<events.length; i++){
+        if (events[i].id == idOfEvent) {
+            return events[i].bookings
+        }
+    }
 }
 
 
@@ -282,3 +407,52 @@ function deleteAllEvents(events) {
     events.length = 0;
     return retArr;    
 } 
+
+
+
+
+
+function idgeneratorforbookings(eventID, singleEvent){
+
+    let myid = singleEvent.bookings.length;
+    for (var i = 0; i < singleEvent.bookings.length; i++){
+        if(singleEvent.bookings[i].id == myid) {
+            myid += 1;
+            myid = idgeneratorforbookings(myid)
+            return myid;
+        }
+    }
+    return myid;
+}
+
+function IdBookingFinder(bookingid,eventID){
+    bookings = getAllBookings(eventID)
+    for (var i = 0; i < bookings.length; i++){
+        if(bookings[i].id == bookingid){
+            return bookings[i];
+        }
+    }
+    return false;
+}
+
+// Deletes a single booking
+function deleteSingleBooking(BookingID, eventID){
+    bookings = getAllBookings(eventID)
+    for (let i = 0; i<bookings.length;i++){
+        if (bookings[i].id == BookingID){
+            bookings.splice(i,1);
+        }
+    }
+}
+
+// Deletes all bookings for an event
+function deleteAllBookingsForEvent(eventID){
+    let myarr = []
+    for(let i=0; i<events.length;i++){
+        if (events[i].id == eventID)
+        {
+            events[i].bookings = myarr
+        }
+    }
+    return 
+}
