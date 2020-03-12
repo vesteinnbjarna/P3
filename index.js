@@ -160,9 +160,6 @@ app.get('/api/v1/events/:eid/bookings/',(req, res)=>{
     
     if (events.length > 0){
         let bookings = getAllBookings(req.params.eid);
-        console.log(bookings)
-        console.log(bookings)
-
         if (bookings.length !== 0){
             res.status(200).json({bookings})
         }
@@ -184,14 +181,12 @@ app.post('/api/v1/events/:eid/bookings/',(req, res)=>{
     }
     else {
         let SeatsOccupiedAtEvent= CalculateAmountOfUsedSeats(req.params.eid)
-        console.log(SeatsOccupiedAtEvent)
         fetchedEvent = doesEventExisits(req.params.eid)
         if (fetchedEvent != false)
         {
             nextid = idgeneratorforbookings(req.params.eid, fetchedEvent)
             let newBooking = {id: nextid, firstName: req.body.firstName, lastName: req.body.lastName, tel: req.body.tel, email: req.body.email, spots: req.body.spots}
             let TotalOccupiedSeats = Number(SeatsOccupiedAtEvent) + Number(req.body.spots)
-            console.log(TotalOccupiedSeats)
             if (TotalOccupiedSeats <= fetchedEvent.capacity)
             {
                 fetchedEvent.bookings.push(newBooking);
