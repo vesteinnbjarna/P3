@@ -272,7 +272,7 @@ app.use('*',(req, res) => {
 // checks if event is legal - needs some more work
 function checkIfLegalEvent(newEvent){
     if (areDatesLegal(newEvent.startDate,newEvent.endDate)){
-        if (newEvent.name != "" && newEvent.capacity > 0){
+        if (newEvent.name != "" && newEvent.capacity >= 0){
             return true;
         } 
         else{
