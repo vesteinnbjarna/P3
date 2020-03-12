@@ -1,9 +1,9 @@
 const port = 3000;
-const express = require('express')
-const app = express()
-const bodyParser = require('body-parser')
-const cors = require('cors')
-app.use(bodyParser.json())
+const express = require('express');
+const app = express();
+const bodyParser = require('body-parser');
+const cors = require('cors');
+app.use(bodyParser.json());
 
 
 events = [];
@@ -44,8 +44,7 @@ app.post('/api/v1/events/', (req,res) =>{
     "capacity":req.body.capacity,
     "startDate":req.body.startDate, // sent in unix timestamp format
     "endDate":req.body.endDate, // sent in unix timestamp format
-    "bookings":[]}
-    console.log(newEvent)
+    "bookings":[]};
 
 
     if (checkIfLegalEvent(newEvent)){
@@ -108,9 +107,6 @@ app.delete('/api/v1/events/:eid', (req,res) => {
 app.put('/api/v1/events/:eid', (req,res) => {
     fetchedEvent = doesEventExisits(req.params.eid);
     if (fetchedEvent != false){
-        console.log("fetchedEvent:")
-        console.log(fetchedEvent.bookings)
-
         updatedEvent = {
             "id":fetchedEvent.id,
             "name": req.body.name,
@@ -273,12 +269,10 @@ app.use('*',(req, res) => {
 // checks if event is legal - needs some more work
 function checkIfLegalEvent(newEvent){
     if (areDatesLegal(newEvent.startDate,newEvent.endDate)){
-        console.log('dates OK')
         if (newEvent.name != "" && newEvent.capacity > 0){
             return true;
         } 
         else{
-            console.log()
             return false;
         }
 
@@ -286,7 +280,6 @@ function checkIfLegalEvent(newEvent){
     }
 
     else{
-        console.log('bad dates')
         return false
     }
 
@@ -303,7 +296,6 @@ function areDatesLegal(startDate,endDate){
     // The input must be of unix timestamp format so if we get a NaN it's not on the correct format
 
     if (isNaN(start) || isNaN(end)){
-        console.log('NaN')
         return false;
     }
 
@@ -315,12 +307,10 @@ function areDatesLegal(startDate,endDate){
 
 // Start date can't be higher then end date
     if (start >= end){
-        console.log("start>=end");
         return false;
     }
 // Current date
     if (start < curr){
-        console.log("curr > start");
         return false;
     }
 
