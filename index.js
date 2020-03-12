@@ -172,10 +172,7 @@ app.get('/api/v1/events/:eid/bookings/',(req, res)=>{
 //create booking
 app.post('/api/v1/events/:eid/bookings/',(req, res)=>{
    
-    if (req.body === undefined || req.body.firstName === undefined || req.body.lastName == undefined || (req.body.tel === undefined && req.body.email === undefined ) || req.body.spots === undefined && req.body.spots >0 && isNaN(req.body.spots) == false ) {
-        res.status(400).json({'message': "you left one of the required fields empty. You're allowed to leave either email or phone empty but not both"});
-    }
-    else {
+    if (req.body && req.body.firstName && req.body.lastName && (req.body.tel || req.body.email ) && req.body.spots && Number(req.body.spots) >0 && typeof Number(req.body.spots) == 'number' ) {
         let SeatsOccupiedAtEvent= CalculateAmountOfUsedSeats(req.params.eid)
         fetchedEvent = doesEventExisits(req.params.eid)
         if (fetchedEvent != false)
@@ -183,7 +180,7 @@ app.post('/api/v1/events/:eid/bookings/',(req, res)=>{
             nextid = idgeneratorforbookings(req.params.eid, fetchedEvent)
             let newBooking = {id: nextid, firstName: req.body.firstName, lastName: req.body.lastName, tel: req.body.tel, email: req.body.email, spots: req.body.spots}
             let TotalOccupiedSeats = Number(SeatsOccupiedAtEvent) + Number(req.body.spots)
-            if (TotalOccupiedSeats <= fetchedEvent.capacity)
+            if (TotalOccupiedSeats <= fetchedEvent.capacity || fetchedEvent.capacity !=0)
             {
                 fetchedEvent.bookings.push(newBooking);
                 res.status(201).json(newBooking);
@@ -194,9 +191,15 @@ app.post('/api/v1/events/:eid/bookings/',(req, res)=>{
             }
         }
         else 
-        {
-            res.status(404).json({"message":"Event does not exists!"})
+        {   
+            res.status(404).json({"message":"Event does not exists!"});
         }
+        
+        }
+    
+    else {
+        
+        res.status(400).json({'message': "you left one of the required fields empty. You're allowed to leave either email or phone empty but not both or choose an amount of seats larger than 0"});
     }
 });
 
