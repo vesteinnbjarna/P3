@@ -180,7 +180,7 @@ app.post('/api/v1/events/:eid/bookings/',(req, res)=>{
             nextid = idgeneratorforbookings(req.params.eid, fetchedEvent)
             let newBooking = {id: nextid, firstName: req.body.firstName, lastName: req.body.lastName, tel: req.body.tel, email: req.body.email, spots: req.body.spots}
             let TotalOccupiedSeats = Number(SeatsOccupiedAtEvent) + Number(req.body.spots)
-            if (TotalOccupiedSeats <= fetchedEvent.capacity || fetchedEvent.capacity !=0)
+            if (Number(TotalOccupiedSeats) <= Number(fetchedEvent.capacity))
             {
                 fetchedEvent.bookings.push(newBooking);
                 res.status(201).json(newBooking);
@@ -456,10 +456,10 @@ function CalculateAmountOfUsedSeats(eventID){
         if (events[i].id == eventID)
         {
             theBookings = events[i].bookings
-        }
+        }}
     for(let i=0; i<theBookings.length;i++){
             count += Number(theBookings[i].spots)
         }
-    }
+    
     return count
 }
