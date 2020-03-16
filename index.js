@@ -91,14 +91,20 @@ app.delete('/api/v1/events', (req,res) => {
 app.delete('/api/v1/events/:eid', (req,res) => {
    
    var fetchedEvent = doesEventExisits(req.params.eid)
-   if (fetchedEvent != false){
+   if (fetchedEvent != false && fetchedEvent.bookings.length === 0){
        res.status(200).json({"message":fetchedEvent})
        deleteSingleEvent(req.params.eid)
 
    }
 
    else{
-       res.status(404).json({"message":"Event not found!"})
+       if (fetchedEvent === false){
+           res.status(404).json({"message":"Event not found!"})
+        }
+        else{
+            res.status(400).json({"message":"Can't delete from this event it has bookings!"})
+        }
+       
    }
    
 
