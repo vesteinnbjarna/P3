@@ -107,41 +107,46 @@ app.delete('/api/v1/events/:eid', (req,res) => {
 app.put('/api/v1/events/:eid', (req,res) => {
     fetchedEvent = doesEventExisits(req.params.eid);
     if (fetchedEvent != false){
-        updatedEvent = {
-            "id":fetchedEvent.id,
-            "name": req.body.name,
-            "description": req.body.description,
-            "location": req.body.location,
-            "capacity": req.body.capacity,
-            "startDate": req.body.startDate,
-            "endDate": req.body.endDate,
-            "bookings": fetchedEvent.bookings
-        }  
+            if (fetchedEvent.bookings.length === 0){
+                updatedEvent = {
 
-        if(updatedEvent.bookings.length === 0){
-            if (checkIfLegalEvent(updatedEvent) == true){
-                for (let i=0;i<events.length;i++){
-                    if(events[i].id == updatedEvent.id){
-                        updatedEvent.startDate = new Date(updatedEvent.startDate * 1000);
-                        updatedEvent.endDate = new Date(updatedEvent.endDate * 1000);
-                        events[i] = updatedEvent;
-                        res.status(200).json({"message":events[i]});
-                        break;
-                    }
+                    "id":fetchedEvent.id,
+                    "name": req.body.name,
+                    "description": req.body.description,
+                    "location": req.body.location,
+                    "capacity": req.body.capacity,
+                    "startDate": req.body.startDate,
+                    "endDate": req.body.endDate,
+                    "bookings": fetchedEvent.bookings
+
+                }
+
+                if (checkIfLegalEvent(updatedEvent) == true){
+                    for (let i=0;i<events.length;i++){
+                        if(events[i].id == updatedEvent.id){
+                            updatedEvent.startDate = new Date(updatedEvent.startDate * 1000);
+                            updatedEvent.endDate = new Date(updatedEvent.endDate * 1000);
+                            events[i] = updatedEvent;
+                            res.status(200).json({"message":events[i]});
+                            break;
+                        }
+                    }  
+                }
+                
+                else{
+                    res.status(400).json({"message":"Invalid Input!"})
                 }
             }
-            
-            else{
-                res.status(400).json({"message":"Bad input"})
-            }
-        }
     
-   
+        else{
+            if (fetchedEvent === false){
+                res.status(404).json({"message": "Event not found!"})}
+            else{
+                res.status(400).json({"message":"Cannot update this event(It has some bookings)"})
+            }
+            
+        }
     }
-    else{
-        res.status(404)
-    }
-
 
 })
 
@@ -247,14 +252,16 @@ app.delete('/api/v1/events/:eid/bookings/', (req,res) => {
     fetchedEvent = doesEventExisits(req.params.eid)
     if (fetchedEvent != false)
     {
+    var returnArr = fetchedEvent.bookings 
     var fetchedBookings = IdBookingFinder(req.params.bid, req.params.eid)
     if (fetchedBookings.length == 0){
         res.status(404).json({"message":"No bookings found!"});
     }
     else
-    {
-        deleteAllBookingsForEvent(req.params.eid)
-        res.status(200).json({"message": "bookings deleted successfully"});
+    {   
+        res.status(200).json({"message": returnArr})
+        deleteAllBookingsForEvent(req.params.eid);
+        
     }
     }
     else{
